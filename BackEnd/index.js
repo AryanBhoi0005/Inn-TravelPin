@@ -9,7 +9,7 @@ import userRoute from './Routes/user.route.js';
 
 // CORS configuration
 const corsOptions = {
-  origin: 'https://inn-travel-pin-aryanbhoi.vercel.app/', // Allow frontend running on localhost:3000
+  origin: '*', // Allow frontend running on localhost:3000
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
