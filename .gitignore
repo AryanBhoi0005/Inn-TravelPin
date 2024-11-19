@@ -113,3 +113,7 @@ Thumbs.db
 
 # Linux
 *.swp
+
+
+.env
+
