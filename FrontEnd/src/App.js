@@ -46,7 +46,9 @@ function App() {
       longitude: newPlace.longitude,
     };
     try {
-      const res = await axios.post("http://localhost:4001/api/pins/postPin", newPin);
+
+      const res = await axios.post("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/postPin", newPin);
+      
       setPins([...pins, res.data]);
       setNewPlace(null);
     } catch (err) {
@@ -58,7 +60,8 @@ function App() {
   useEffect(() => {
     const getPins = async () => {
       try {
-        const allPins = await axios.get("http://localhost:4001/api/pins/getPin");
+
+        const allPins = await axios.get("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/getPin");
         setPins(allPins.data);
       } catch (err) {
         console.error("Error fetching pins:", err);
@@ -69,6 +72,7 @@ function App() {
 
   useEffect(() => {
     // Get user's current location
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
