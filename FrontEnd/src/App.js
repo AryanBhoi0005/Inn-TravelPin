@@ -25,6 +25,9 @@ function App() {
   const [showRegister, setShowRegister] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
+  // Define the usernames of your three best friends
+  const bestFriends = ["friend1", "friend2", "friend3"];  // Replace with your actual usernames
+
   const handleMarkerClick = (id, latitude, longitude) => {
     setCurrentPlaceId(id);
     setViewport({ ...viewport, latitude: latitude, longitude: longitude });
@@ -46,9 +49,7 @@ function App() {
       longitude: newPlace.longitude,
     };
     try {
-
       const res = await axios.post("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/postPin", newPin);
-      
       setPins([...pins, res.data]);
       setNewPlace(null);
     } catch (err) {
@@ -60,7 +61,6 @@ function App() {
   useEffect(() => {
     const getPins = async () => {
       try {
-
         const allPins = await axios.get("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/getPin");
         setPins(allPins.data);
       } catch (err) {
@@ -72,7 +72,6 @@ function App() {
 
   useEffect(() => {
     // Get user's current location
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -119,7 +118,11 @@ function App() {
             <Room
               style={{
                 fontSize: 7 * viewport.zoom,
-                color: currentUsername === p.username ? "tomato" : "slateblue",
+                color: bestFriends.includes(p.username)
+                  ? "green"  // Change the color to green for friends
+                  : currentUsername === p.username
+                  ? "tomato"  // Use 'tomato' for the current user
+                  : "slateblue",  // Default color for other pins
                 cursor: "pointer",
               }}
               onClick={() => handleMarkerClick(p._id, p.latitude, p.longitude)}
