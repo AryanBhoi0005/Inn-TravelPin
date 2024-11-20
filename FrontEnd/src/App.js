@@ -3,7 +3,6 @@ import ReactMapGL, { Marker, Popup } from "react-map-gl";
 import { useEffect, useState } from "react";
 import { Room, Star } from "@mui/icons-material";
 import axios from "axios";
-// import { format } from "react-time-ago";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -18,44 +17,40 @@ function App() {
   const [desc, setDesc] = useState(null);
   const [star, setStar] = useState(0);
   const [viewport, setViewport] = useState({
-    latitude: 19.0760, // Default latitude (Mumbai)
-    longitude: 72.8777, // Default longitude
+    latitude: 19.0760,
+    longitude: 72.8777,
     zoom: 4,
   });
   const [showRegister, setShowRegister] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  
+  // State to store the selected pins for distance calculation
+  const [selectedPins, setSelectedPins] = useState([]);
+  const [distance, setDistance] = useState(null);
 
-  // Define the usernames of your three best friends
-  const bestFriends = ["friend1", "friend2", "friend3"];  // Replace with your actual usernames
-
+  // Handle marker click for selecting pins
   const handleMarkerClick = (id, latitude, longitude) => {
     setCurrentPlaceId(id);
     setViewport({ ...viewport, latitude: latitude, longitude: longitude });
-  };
 
-  const handleAddClick = (e) => {
-    const { lng, lat } = e.lngLat;
-    setNewPlace({ latitude: lat, longitude: lng });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newPin = {
-      username: currentUsername,
-      title,
-      desc,
-      rating: star,
-      latitude: newPlace.latitude,
-      longitude: newPlace.longitude,
-    };
-    try {
-      const res = await axios.post("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/postPin", newPin);
-      setPins([...pins, res.data]);
-      setNewPlace(null);
-    } catch (err) {
-      console.error("Error posting new pin:", err);
-      alert("Failed to add pin. Please try again later.");
+    // Add pin to selectedPins array if it's not already selected
+    if (selectedPins.length < 2) {
+      setSelectedPins([...selectedPins, { latitude, longitude }]);
     }
+  };
+
+  // Function to calculate distance between two points
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of Earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
   };
 
   useEffect(() => {
@@ -71,33 +66,19 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Get user's current location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setViewport((prev) => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            zoom: 14, // Adjust zoom for better visibility
-          }));
-        },
-        (error) => {
-          console.error("Error fetching location:", error);
-        }
-      );
-    } else {
-      console.error("Geolocation is not supported by this browser.");
+    // If two pins are selected, calculate the distance
+    if (selectedPins.length === 2) {
+      const [pin1, pin2] = selectedPins;
+      const dist = calculateDistance(pin1.latitude, pin1.longitude, pin2.latitude, pin2.longitude);
+      setDistance(dist);
     }
-  }, []);
-
-  const handleLogout = () => {
-    setCurrentUsername(null);
-    myStorage.removeItem("user");
-  };
+  }, [selectedPins]);
 
   return (
     <div style={{ height: "100vh", width: "100vw" }}>
+      <div style={{ padding: '10px', background: '#fff', position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
+        {distance && <h3>Distance between selected pins: {distance.toFixed(2)} km</h3>}
+      </div>
       <ReactMapGL
         {...viewport}
         mapboxAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
@@ -105,7 +86,7 @@ function App() {
         transitionDuration="200"
         mapStyle="mapbox://styles/aryanbhoi/cm3k6ktn300nd01seedxa5sxs"
         onMove={(evt) => setViewport(evt.viewState)}
-        onDblClick={currentUsername && handleAddClick}
+        onDblClick={currentUsername && handleMarkerClick}
       >
         {pins.map((p) => (
           <Marker
@@ -118,11 +99,7 @@ function App() {
             <Room
               style={{
                 fontSize: 7 * viewport.zoom,
-                color: bestFriends.includes(p.username)
-                  ? "green"  // Change the color to green for friends
-                  : currentUsername === p.username
-                  ? "tomato"  // Use 'tomato' for the current user
-                  : "slateblue",  // Default color for other pins
+                color: currentUsername === p.username ? "tomato" : "slateblue",
                 cursor: "pointer",
               }}
               onClick={() => handleMarkerClick(p._id, p.latitude, p.longitude)}
@@ -224,24 +201,14 @@ function App() {
             <button className="button login" onClick={() => setShowLogin(true)}>
               Log in
             </button>
-            <button
-              className="button register"
-              onClick={() => setShowRegister(true)}
-            >
+            <button className="button register" onClick={() => setShowRegister(true)}>
               Register
             </button>
           </div>
         )}
-
-        {showRegister && <Register setShowRegister={setShowRegister} />}
-        {showLogin && (
-          <Login
-            setShowLogin={setShowLogin}
-            setCurrentUsername={setCurrentUsername}
-            myStorage={myStorage}
-          />
-        )}
       </ReactMapGL>
+      {showRegister && <Register setShowRegister={setShowRegister} />}
+      {showLogin && <Login setShowLogin={setShowLogin} />}
     </div>
   );
 }
