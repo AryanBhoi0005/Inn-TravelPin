@@ -3,25 +3,10 @@ import ReactMapGL, { Marker, Popup } from "react-map-gl";
 import { useEffect, useState } from "react";
 import { Room, Star } from "@mui/icons-material";
 import axios from "axios";
+// import { format } from "react-time-ago";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import "mapbox-gl/dist/mapbox-gl.css";
-
-// Haversine formula to calculate the distance between two latitudes and longitudes
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Radius of the Earth in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in km
-  return distance.toFixed(2); // Return distance rounded to 2 decimal places
-};
 
 function App() {
   const myStorage = window.localStorage;
@@ -39,8 +24,6 @@ function App() {
   });
   const [showRegister, setShowRegister] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [selectedPins, setSelectedPins] = useState([]); // Track selected pins for distance calculation
-  const [distance, setDistance] = useState(null); // Store the calculated distance
 
   const handleMarkerClick = (id, latitude, longitude) => {
     setCurrentPlaceId(id);
@@ -63,10 +46,9 @@ function App() {
       longitude: newPlace.longitude,
     };
     try {
-      const res = await axios.post(
-        "https://inn-travelpin-aryanbhoi.onrender.com/api/pins/postPin",
-        newPin
-      );
+
+      const res = await axios.post("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/postPin", newPin);
+      
       setPins([...pins, res.data]);
       setNewPlace(null);
     } catch (err) {
@@ -75,26 +57,11 @@ function App() {
     }
   };
 
-  const handleSelectPin = (id, latitude, longitude) => {
-    // Add or remove pins from the selection
-    setSelectedPins((prevSelectedPins) => {
-      const isAlreadySelected = prevSelectedPins.some(
-        (pin) => pin.id === id
-      );
-      if (isAlreadySelected) {
-        return prevSelectedPins.filter((pin) => pin.id !== id);
-      } else {
-        return [...prevSelectedPins, { id, latitude, longitude }];
-      }
-    });
-  };
-
   useEffect(() => {
     const getPins = async () => {
       try {
-        const allPins = await axios.get(
-          "https://inn-travelpin-aryanbhoi.onrender.com/api/pins/getPin"
-        );
+
+        const allPins = await axios.get("https://inn-travelpin-aryanbhoi.onrender.com/api/pins/getPin");
         setPins(allPins.data);
       } catch (err) {
         console.error("Error fetching pins:", err);
@@ -105,6 +72,7 @@ function App() {
 
   useEffect(() => {
     // Get user's current location
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -123,20 +91,6 @@ function App() {
       console.error("Geolocation is not supported by this browser.");
     }
   }, []);
-
-  // Calculate distance when two pins are selected
-  useEffect(() => {
-    if (selectedPins.length === 2) {
-      const [pin1, pin2] = selectedPins;
-      const calculatedDistance = calculateDistance(
-        pin1.latitude,
-        pin1.longitude,
-        pin2.latitude,
-        pin2.longitude
-      );
-      setDistance(calculatedDistance);
-    }
-  }, [selectedPins]);
 
   const handleLogout = () => {
     setCurrentUsername(null);
@@ -169,44 +123,40 @@ function App() {
                 cursor: "pointer",
               }}
               onClick={() => handleMarkerClick(p._id, p.latitude, p.longitude)}
-              onDoubleClick={() =>
-                handleSelectPin(p._id, p.latitude, p.longitude)
-              }
             />
           </Marker>
         ))}
 
-        {pins.map(
-          (p) =>
-            p._id === currentPlaceId && (
-              <Popup
-                key={p._id}
-                latitude={p.latitude}
-                longitude={p.longitude}
-                closeButton={true}
-                closeOnClick={false}
-                onClose={() => setCurrentPlaceId(null)}
-                anchor="left"
-              >
-                <div className="card">
-                  <label>Place</label>
-                  <h4 className="place">{p.title}</h4>
-                  <label>Review</label>
-                  <p className="desc">{p.desc}</p>
-                  <label>Rating</label>
-                  <div className="stars">
-                    {Array.from({ length: p.rating }, (_, index) => (
-                      <Star key={index} className="star" />
-                    ))}
-                  </div>
-                  <label>Information</label>
-                  <span className="username">
-                    Created by <b>{p.username}</b>
-                  </span>
+        {pins.map((p) => (
+          p._id === currentPlaceId && (
+            <Popup
+              key={p._id}
+              latitude={p.latitude}
+              longitude={p.longitude}
+              closeButton={true}
+              closeOnClick={false}
+              onClose={() => setCurrentPlaceId(null)}
+              anchor="left"
+            >
+              <div className="card">
+                <label>Place</label>
+                <h4 className="place">{p.title}</h4>
+                <label>Review</label>
+                <p className="desc">{p.desc}</p>
+                <label>Rating</label>
+                <div className="stars">
+                  {Array.from({ length: p.rating }, (_, index) => (
+                    <Star key={index} className="star" />
+                  ))}
                 </div>
-              </Popup>
-            )
-        )}
+                <label>Information</label>
+                <span className="username">
+                  Created by <b>{p.username}</b>
+                </span>
+              </div>
+            </Popup>
+          )
+        ))}
 
         {newPlace && (
           <>
@@ -234,24 +184,18 @@ function App() {
             >
               <div>
                 <form onSubmit={handleSubmit}>
-                  <label>
-                    <h2>Title</h2>
-                  </label>
+                  <label><h2>Title</h2></label>
                   <input
                     placeholder="Enter a title"
                     autoFocus
                     onChange={(e) => setTitle(e.target.value)}
                   />
-                  <label>
-                    <h3>Description</h3>
-                  </label>
+                  <label><h3>Description</h3></label>
                   <textarea
                     placeholder="Say us something about this place."
                     onChange={(e) => setDesc(e.target.value)}
                   />
-                  <label>
-                    <h3>Rating</h3>
-                  </label>
+                  <label><h3>Rating</h3></label>
                   <select onChange={(e) => setStar(e.target.value)}>
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -259,7 +203,7 @@ function App() {
                     <option value="4">4</option>
                     <option value="5">5</option>
                   </select>
-                  <button className="submitButton" type="submit">
+                  <button type="submit" className="submitButton">
                     Add Pin
                   </button>
                 </form>
@@ -267,12 +211,34 @@ function App() {
             </Popup>
           </>
         )}
+
+        {currentUsername ? (
+          <button className="button logout" onClick={handleLogout}>
+            Log out
+          </button>
+        ) : (
+          <div className="buttons">
+            <button className="button login" onClick={() => setShowLogin(true)}>
+              Log in
+            </button>
+            <button
+              className="button register"
+              onClick={() => setShowRegister(true)}
+            >
+              Register
+            </button>
+          </div>
+        )}
+
+        {showRegister && <Register setShowRegister={setShowRegister} />}
+        {showLogin && (
+          <Login
+            setShowLogin={setShowLogin}
+            setCurrentUsername={setCurrentUsername}
+            myStorage={myStorage}
+          />
+        )}
       </ReactMapGL>
-      {distance && (
-        <div className="distance-display">
-          <h3>Distance: {distance} km</h3>
-        </div>
-      )}
     </div>
   );
 }
